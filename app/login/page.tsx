@@ -2,15 +2,49 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [pwd, setPwd] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Front-end only for now — wire this up to your API route / auth
-    // provider once the backend exists.
+    if (!username || !pwd) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password: pwd,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -35,6 +69,12 @@ export default function LoginPage() {
           </span>
           <h1 className="mt-2 font-display text-3xl text-ink-950">Log in</h1>
 
+          {error && (
+            <div className="mt-4 rounded-lg border border-rule/30 bg-rule/10 p-3 font-mono text-xs text-rule">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             <div>
               <label
@@ -49,7 +89,8 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="First name only"
-                className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass"
+                disabled={loading}
+                className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass disabled:opacity-60"
               />
             </div>
 
@@ -74,15 +115,17 @@ export default function LoginPage() {
                 value={pwd}
                 onChange={(e) => setPwd(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass"
+                disabled={loading}
+                className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass disabled:opacity-60"
               />
             </div>
 
             <button
               type="submit"
-              className="shine-wrap w-full rounded-lg bg-ink-950 px-6 py-3 font-mono text-xs uppercase tracking-widest text-cream transition-transform hover:scale-[1.01] hover:bg-ink-800"
+              disabled={loading}
+              className="shine-wrap w-full rounded-lg bg-ink-950 px-6 py-3 font-mono text-xs uppercase tracking-widest text-cream transition-transform hover:scale-[1.01] hover:bg-ink-800 disabled:opacity-60 disabled:hover:scale-100"
             >
-              Log in
+              {loading ? "Authenticating..." : "Log in"}
             </button>
           </form>
         </div>

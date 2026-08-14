@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 function usernameFromName(name: string) {
   return name.trim().split(/\s+/)[0] || "";
@@ -17,22 +18,62 @@ function passwordChecks(pwd: string) {
 }
 
 export default function Register() {
+  const router = useRouter();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [touched, setTouched] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [registeredUser, setRegisteredUser] = useState("");
 
   const username = useMemo(() => usernameFromName(name), [name]);
   const checks = useMemo(() => passwordChecks(pwd), [pwd]);
-  const canSubmit = name.trim().length > 0 && checks.every((c) => c.ok);
+  
+  const canSubmit = 
+    name.trim().length > 0 && 
+    email.trim().length > 0 && 
+    email.includes("@") &&
+    checks.every((c) => c.ok);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTouched(true);
+    setError("");
+
     if (!canSubmit) return;
-    // Front-end only for now — wire this up to your API route / auth
-    // provider once the backend exists.
-    setSubmitted(true);
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password: pwd,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create account.");
+      } else {
+        setRegisteredUser(data.username);
+        // Redirect to dashboard after 2 seconds so they can see their username
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      }
+    } catch (err) {
+      setError("Server connection failed.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -59,12 +100,17 @@ export default function Register() {
             Open an account
           </h1>
 
-          {submitted ? (
+          {error && (
+            <div className="mt-4 rounded-lg border border-rule/30 bg-rule/10 p-3 font-mono text-xs text-rule">
+              {error}
+            </div>
+          )}
+
+          {registeredUser ? (
             <div className="mt-6 animate-fade-in rounded-lg border border-moss/40 bg-moss/10 p-4">
               <p className="font-body text-sm leading-relaxed text-moss">
-                Account entered. Username <strong>{username}</strong> is
-                ready — head to log in once the ledger is connected to a
-                database.
+                Account entered. Username <strong>{registeredUser}</strong> is
+                registered. Opening your ledger...
               </p>
             </div>
           ) : (
@@ -82,7 +128,8 @@ export default function Register() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Ananya Sahu"
-                  className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass"
+                  disabled={submitting}
+                  className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass disabled:opacity-60"
                 />
                 <p
                   className={`mt-1.5 min-h-[1.1rem] font-mono text-xs transition-opacity ${
@@ -98,6 +145,24 @@ export default function Register() {
 
               <div>
                 <label
+                  htmlFor="email"
+                  className="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.15em] text-ink-900/70"
+                >
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. ananya@example.com"
+                  disabled={submitting}
+                  className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label
                   htmlFor="pwd"
                   className="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.15em] text-ink-900/70"
                 >
@@ -109,7 +174,8 @@ export default function Register() {
                   value={pwd}
                   onChange={(e) => setPwd(e.target.value)}
                   placeholder="At least 4 characters"
-                  className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass"
+                  disabled={submitting}
+                  className="w-full rounded-lg border border-ink-900/25 bg-cream px-3.5 py-2.5 font-body text-sm text-ink-950 outline-none transition-colors placeholder:text-ink-900/40 focus:border-brass disabled:opacity-60"
                 />
                 <ul className="mt-2.5 grid grid-cols-2 gap-x-2 gap-y-1.5">
                   {checks.map((c) => (
@@ -139,10 +205,11 @@ export default function Register() {
               </div>
 
               <button
-                type="submit"
-                className="shine-wrap w-full rounded-lg bg-ink-950 px-6 py-3 font-mono text-xs uppercase tracking-widest text-cream transition-transform hover:scale-[1.01] hover:bg-ink-800"
-              >
-                Create account
+                  type="submit"
+                  disabled={submitting} 
+                  className={`shine-wrap w-full rounded-lg bg-ink-950 px-6 py-3 font-mono text-xs uppercase tracking-widest text-cream transition-transform hover:bg-ink-800 disabled:opacity-60 disabled:hover:scale-100 ${
+                  !submitting ? "hover:scale-[1.01]" : ""}`}>
+                {submitting ? "Opening..." : "Create account"}
               </button>
             </form>
           )}
