@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import CircleLoader from "@/components/CircleLoader";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -125,7 +126,14 @@ export default function LoginPage() {
               disabled={loading}
               className="shine-wrap w-full rounded-lg bg-ink-950 px-6 py-3 font-mono text-xs uppercase tracking-widest text-cream transition-transform hover:scale-[1.01] hover:bg-ink-800 disabled:opacity-60 disabled:hover:scale-100"
             >
-              {loading ? "Authenticating..." : "Log in"}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <CircleLoader size="sm" />
+                  Authenticating...
+                </div>
+              ) : (
+                "Log in"
+              )}
             </button>
           </form>
         </div>

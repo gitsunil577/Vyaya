@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import CircleLoader from "@/components/CircleLoader";
 
 function usernameFromName(name: string) {
   return name.trim().split(/\s+/)[0] || "";
@@ -209,7 +210,14 @@ export default function Register() {
                   disabled={submitting} 
                   className={`shine-wrap w-full rounded-lg bg-ink-950 px-6 py-3 font-mono text-xs uppercase tracking-widest text-cream transition-transform hover:bg-ink-800 disabled:opacity-60 disabled:hover:scale-100 ${
                   !submitting ? "hover:scale-[1.01]" : ""}`}>
-                {submitting ? "Opening..." : "Create account"}
+                {submitting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <CircleLoader size="sm" />
+                    Opening...
+                  </div>
+                ) : (
+                  "Create account"
+                )}
               </button>
             </form>
           )}

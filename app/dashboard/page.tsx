@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import CircleLoader from "@/components/CircleLoader";
 
 // Define the categories from the Expense schema
 const CATEGORIES = [
@@ -528,7 +529,14 @@ export default function DashboardPage() {
                   disabled={submitting}
                   className="rounded-lg bg-ink-950 px-5 py-2.5 font-mono text-xs uppercase tracking-widest text-cream hover:bg-ink-800 disabled:opacity-60 cursor-pointer"
                 >
-                  {submitting ? "Entering..." : "Enter Expense"}
+                  {submitting ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <CircleLoader size="sm" />
+                      Entering...
+                    </div>
+                  ) : (
+                    "Enter Expense"
+                  )}
                 </button>
               </div>
             </form>
