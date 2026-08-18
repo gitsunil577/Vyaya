@@ -65,6 +65,7 @@ export default function DashboardPage() {
       
       const data = await sessionRes.json();
       if (sessionRes.ok) {
+        setUsername(data.username);
         setExpenses(data.expenses);
         setStats(data.stats);
       } else {
@@ -75,6 +76,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
   };
 
   useEffect(() => {
@@ -167,7 +175,7 @@ export default function DashboardPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ink-950 font-mono text-xs text-muted">
         <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-brass border-t-transparent mx-auto"></div>
+          <CircleLoader size="lg" className="mb-4 mx-auto" />
           Reading ledger...
         </div>
       </div>
@@ -190,6 +198,11 @@ export default function DashboardPage() {
             <span className="font-display text-xl tracking-tight text-cream">
               Vyaya Dashboard
             </span>
+          </div>
+          <div className="flex flex-col items-end">
+            <p className="font-mono text-xs text-muted">
+              {getGreeting()}, <span className="text-brass-light font-medium capitalize">{username}</span>
+            </p>
           </div>
           <div className="flex items-center gap-4">
             <button

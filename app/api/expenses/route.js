@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Expense } from "@/models/Expense";
+import { User } from "@/models/User";
 import { getSession } from "@/lib/auth";
 import { expenseSchema } from "@/lib/validation";
 
@@ -13,6 +14,7 @@ export async function GET() {
   await connectDB();
 
   const userId = session.userId;
+  const user = await User.findById(userId);
 
   // Fetch all expenses for this user (sorted by date descending)
   const expenses = await Expense.find({ userId }).sort({ createdAt: -1 });
@@ -66,6 +68,7 @@ export async function GET() {
   });
 
   return NextResponse.json({
+    username: user ? user.username : "User",
     expenses,
     stats: {
       totalSpend,
